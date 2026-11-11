@@ -6,9 +6,9 @@ The analysis covers flights scheduled from JFK, LaGuardia, and Newark in 2013. I
 
 ## Project files
 
-- [Analysis notebook](portolio_project1_of_AIRLINES/airlines_flight_delays_analysis.ipynb)
-- [Interactive walkthrough](portolio_project1_of_AIRLINES/airlines_flight_delays_animation.html)
-- [Original project notes](portolio_project1_of_AIRLINES/airlines_flight_delays_README.md)
+- [Analysis notebook](airlines_flight_delays_analysis.ipynb)
+- [Interactive walkthrough](airlines_flight_delays_animation.html)
+- [Original project notes](airlines_flight_delays_README.md)
 
 ## Headline result
 
