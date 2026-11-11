@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Which New York departures will leave late?</title>
+<style>
+/* Shared look for the concept animations. One file, no dependencies. */
+:root{
+  --bg:#f6f5f2; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#8a8982; --line:#dedcd5;
+  --blue:#2a78d6; --orange:#eb6834; --aqua:#1baf7a; --yellow:#eda100; --red:#d93a3a; --violet:#6250d6;
+  --blue-soft:#dbe8f9; --orange-soft:#fbe3d8; --aqua-soft:#d6f1e6; --yellow-soft:#fbecc4; --red-soft:#f9dcdc; --grey-soft:#ebe9e3;
+  --code-bg:#17181c; --code-ink:#e6e4dd; --code-dim:#8d8c86; --code-hl:#2c3a52;
+  --r:10px; --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#121211; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#8a8982; --line:#33322e;
+  --blue:#3987e5; --orange:#d95926; --aqua:#199e70; --yellow:#c98500; --red:#e66767; --violet:#9085e9;
+  --blue-soft:#1d2f47; --orange-soft:#44251a; --aqua-soft:#173a2e; --yellow-soft:#3d3110; --red-soft:#472020; --grey-soft:#262624;
+}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--blue)}
+header.top{padding:18px 20px 6px;max-width:1180px;margin:0 auto}
+header.top .crumbs{font-size:13px;color:var(--ink2);display:flex;flex-wrap:wrap;gap:4px 12px}
+header.top .crumbs a{text-decoration:none;white-space:nowrap}
+header.top h1{margin:10px 0 4px;font-size:clamp(24px,4vw,34px);line-height:1.15;letter-spacing:-.02em}
+header.top p.lead{margin:0;color:var(--ink2);max-width:70ch}
+main{max-width:1180px;margin:0 auto;padding:8px 20px 60px}
+section.lesson{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:22px}
+section.lesson>h2{margin:0 0 2px;font-size:20px;letter-spacing:-.01em}
+section.lesson>p.sub{margin:0 0 14px;color:var(--ink2);font-size:14.5px}
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:18px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+pre.code{margin:0;background:var(--code-bg);color:var(--code-ink);border-radius:var(--r);padding:10px 0;font:13px/1.65 var(--mono);overflow-x:auto;counter-reset:ln}
+pre.code span.l{display:block;padding:0 12px 0 0;white-space:pre;border-left:3px solid transparent;transition:background .25s,border-color .25s}
+pre.code span.l::before{counter-increment:ln;content:counter(ln);display:inline-block;width:30px;text-align:right;margin-right:12px;color:var(--code-dim)}
+pre.code span.l.on{background:var(--code-hl);border-left-color:var(--blue)}
+pre.code .c{color:var(--code-dim)}
+.say{margin-top:12px;min-height:118px;font-size:15.5px}
+.say b{font-weight:650}
+.say code,.note code,td code,p code,li code{font:13px var(--mono);background:var(--grey-soft);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+.ctl{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 14px;border-radius:8px;cursor:pointer}
+button:hover{border-color:var(--ink2)}
+button.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+button:disabled{opacity:.4;cursor:default}
+button.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.dots{display:flex;gap:5px;flex-wrap:wrap;margin-left:4px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);cursor:pointer;transition:background .2s,transform .2s}
+.dots i.on{background:var(--blue);transform:scale(1.25)}
+.stepno{font-size:12.5px;color:var(--muted);margin-left:auto}
+.stage{position:relative;min-height:330px;border:1px dashed var(--line);border-radius:var(--r);padding:14px;overflow:hidden}
+.stage h4{margin:0 0 8px;font-size:12.5px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em}
+/* data tables */
+table.df{border-collapse:separate;border-spacing:3px;font:13px/1.2 var(--mono)}
+table.df th{font-weight:600;color:var(--ink2);padding:4px 9px;text-align:left;font-size:12px}
+table.df td{padding:6px 9px;border-radius:6px;background:var(--grey-soft);white-space:pre;transition:background .45s,color .45s,opacity .45s,transform .45s}
+table.df td.idx{background:transparent;color:var(--muted);font-size:12px}
+td.num,.chip.num{background:var(--blue-soft)!important}
+td.nan,.chip.nan{background:var(--yellow-soft)!important;color:var(--ink)}
+td.bad,.chip.bad{background:var(--red-soft)!important}
+td.ok,.chip.ok{background:var(--aqua-soft)!important}
+td.chg{background:var(--orange-soft)!important}
+td.gone{opacity:.12}
+td.hide,th.hide{display:none}
+.tag{display:inline-block;font:12px var(--mono);padding:2px 8px;border-radius:20px;background:var(--grey-soft);color:var(--ink2);margin:6px 6px 0 0;transition:background .3s}
+.tag.num{background:var(--blue-soft)} .tag.bad{background:var(--red-soft)} .tag.nan{background:var(--yellow-soft)} .tag.ok{background:var(--aqua-soft)}
+.err{font:12.5px/1.5 var(--mono);background:var(--red-soft);border-left:3px solid var(--red);padding:8px 10px;border-radius:6px;margin-top:10px;opacity:0;transform:translateY(6px);transition:all .4s}
+.err.show{opacity:1;transform:none}
+.note{border-left:3px solid var(--blue);background:var(--blue-soft);padding:10px 12px;border-radius:6px;font-size:14.5px;margin-top:12px}
+.note.warn{border-color:var(--orange);background:var(--orange-soft)}
+.note.good{border-color:var(--aqua);background:var(--aqua-soft)}
+.fade{opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s;pointer-events:none}
+.fade.show{opacity:1;transform:none;pointer-events:auto}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:16px}
+.rules>div{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;font-size:14.5px;background:var(--surface)}
+.rules h3{margin:0 0 6px;font-size:15px}
+.rules ul{margin:0;padding-left:18px}
+table.plain{border-collapse:collapse;width:100%;font-size:14px;margin-top:8px}
+table.plain th,table.plain td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.plain th{font-size:12.5px;color:var(--ink2);font-weight:600}
+.scroll{overflow-x:auto}
+svg text{fill:var(--ink2);font:12px system-ui,sans-serif}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin:8px 0}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+footer{max-width:1180px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}}
+
+.panel h4{margin-top:14px}
+.rules code,h1 code,h2 code{font:.86em var(--mono);background:var(--grey-soft);padding:1px 5px;border-radius:5px}
+code{overflow-wrap:anywhere}
+.rules>div{min-width:0}
+
+.stage{min-height:400px}
+.vz h4{margin-bottom:12px}
+.fn{display:grid;grid-template-columns:minmax(120px,210px) 1fr;gap:6px 12px;align-items:center;font-size:13.5px;margin-bottom:10px}
+.fn .b{height:26px;background:var(--grey-soft);border-radius:6px;position:relative;overflow:hidden}
+.fn .b i{position:absolute;left:0;top:0;bottom:0;background:var(--blue);border-radius:6px;width:0;transition:width 1s cubic-bezier(.3,.8,.3,1)}
+.fn .b span{position:absolute;left:8px;top:4px;font:600 12.5px var(--mono);color:#fff;mix-blend-mode:normal;text-shadow:0 0 3px rgba(0,0,0,.45)}
+.fn small{grid-column:2;color:var(--ink2);margin-top:-4px}
+.hb{display:grid;grid-template-columns:minmax(110px,44%) 1fr 58px;gap:8px;align-items:center;font-size:13px;margin:7px 0}
+.hb div{height:18px;background:var(--grey-soft);border-radius:5px;overflow:hidden}.hb div i{display:block;height:100%;width:0;background:var(--blue);border-radius:5px;transition:width 1s cubic-bezier(.3,.8,.3,1)}
+.hb.hi div i{background:var(--orange)}.hb.lo div i{background:var(--muted)}.hb b{font:600 12.5px var(--mono);text-align:right}
+.vb{display:flex;align-items:flex-end;gap:6px;height:230px;border-bottom:2px solid var(--line);padding-top:26px}
+.vb .c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;min-width:0}
+.vb .c i{display:block;width:100%;max-width:64px;background:var(--blue);border-radius:4px 4px 0 0;height:0;transition:height 1s cubic-bezier(.3,.8,.3,1)}
+.vb .c.hi i{background:var(--orange)}.vb .c.s2 i{background:var(--orange)}
+.vb .c em{font:normal 11.5px var(--mono);color:var(--ink2);margin-bottom:3px;white-space:nowrap}
+.vx{display:flex;gap:6px;font-size:11.5px;color:var(--ink2);margin-top:5px}.vx span{flex:1;text-align:center;min-width:0;overflow-wrap:anywhere;line-height:1.2}
+.cap{font-size:12.5px;color:var(--ink2);margin-top:8px;text-align:center}
+.sp{display:flex;height:54px;border-radius:8px;overflow:hidden;margin:18px 0 8px;font:600 13px system-ui;color:#fff}
+.sp div{display:flex;align-items:center;justify-content:center;transition:flex 1s;flex:0 0 0;white-space:nowrap;overflow:hidden}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:12px 0}.kv div{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.kv b{display:block;font-size:21px;letter-spacing:-.01em}.kv span{font-size:12px;color:var(--ink2)}
+.big{font-size:clamp(20px,3.2vw,28px);font-weight:700;letter-spacing:-.015em;line-height:1.25;margin:26px 6px}
+.th canvas{width:100%;height:210px;display:block}.th input[type=range]{width:100%;accent-color:var(--orange)}
+.th label{font-size:13px;color:var(--ink2);display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}.th input[type=number]{width:64px;font:inherit;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
+table.t{border-collapse:collapse;width:100%;font-size:13.5px}table.t th,table.t td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right}table.t th:first-child,table.t td:first-child{text-align:left}table.t th{font-size:12px;color:var(--ink2)}
+td.pos{color:var(--orange);font-weight:600}td.neg{color:var(--blue);font-weight:600}
+</style></head>
+<body>
+<header class="top"><div style="font-size:13px;color:var(--ink2)">Airlines · project walkthrough</div><h1>Which New York departures will leave late?</h1><p class="lead">336,776 real flights from 2013. Cleaning, exploring, modelling and turning a probability into an operational rule.</p></header>
+<main><section class="lesson" id="S"></section>
+<section class="lesson"><h2>Sources</h2><p class="sub" style="margin:0">Data: US Bureau of Transportation Statistics via <code>nycflights13</code>. Cost estimate: Ball et al. (2010), <i>Total Delay Impact Study</i>, NEXTOR. Full reference list in <code>paper/paper.md</code>.</p></section></main>
+<footer>Every number on this page is read from <code>results/metrics.json</code>, which <code>src/analysis.py</code> writes. Change the analysis, re-run, rebuild, and the page follows.</footer>
+<script>
+/* Tiny step-through engine shared by every lesson page. No libraries.
+   A lesson = code lines + steps. Each step highlights code, says something, and redraws the stage.
+   draw() functions are idempotent (they set the full state), so Back works as well as Next. */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+function h(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v; else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) e.append(k?.nodeType ? k : document.createTextNode(k ?? ''));
+  return e;
+}
+function svg(tag, attrs = {}, ...kids) {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  for (const k of kids.flat()) e.append(k?.nodeType ? k : document.createTextNode(k ?? ''));
+  return e;
+}
+const NAV = [['index.html', 'Map'], ['01_text_to_numbers.html', '1 Types'], ['02_reindex_get_dummies.html', '2 Reindex + dummies'],
+  ['03_missing_values.html', '3 Missing values'], ['04_split_and_scale.html', '4 Split + scale'], ['05_model_picker.html', '5 Models'],
+  ['06_sklearn_vs_statsmodels.html', '6 sklearn vs statsmodels'], ['07_reading_charts.html', '7 Reading charts']];
+function nav() {
+  const here = location.pathname.split('/').pop() || 'index.html';
+  const c = $('.crumbs'); if (!c) return;
+  NAV.forEach(([f, t]) => c.append(h('a', { href: f, style: f === here ? 'font-weight:700;color:var(--ink)' : '' }, t)));
+}
+document.addEventListener('DOMContentLoaded', nav);
+
+/* Lesson({mount, title, sub, code:[...], setup(stage)->refs, steps:[{line, say, draw(refs)}]}) */
+function Lesson(o) {
+  const root = typeof o.mount === 'string' ? $(o.mount) : o.mount;
+  const codeEl = h('pre', { class: 'code' });
+  (o.code || []).forEach(t => codeEl.append(h('span', { class: 'l', html: t.replace(/(#.*)$/, '<span class="c">$1</span>') || ' ' })));
+  const say = h('div', { class: 'say' }), stage = h('div', { class: 'stage' });
+  const dots = h('div', { class: 'dots' }), no = h('span', { class: 'stepno' });
+  const prev = h('button', { onclick: () => go(i - 1) }, '◀ Back');
+  const next = h('button', { class: 'pri', onclick: () => go(i + 1) }, 'Next ▶');
+  const play = h('button', { onclick: toggle }, '▶ Play');
+  root.append(h('h2', {}, o.title), h('p', { class: 'sub', html: o.sub || '' }),
+    h('div', { class: 'grid' }, h('div', {}, o.code ? codeEl : '', say, h('div', { class: 'ctl' }, prev, next, play, dots, no)), stage));
+  const refs = o.setup ? o.setup(stage) : {};
+  let i = 0, timer = null;
+  o.steps.forEach((_, k) => dots.append(h('i', { onclick: () => go(k) })));
+  function go(k) {
+    i = Math.max(0, Math.min(o.steps.length - 1, k));
+    const s = o.steps[i], lines = s.line == null ? [] : [].concat(s.line);
+    $$('.l', codeEl).forEach((l, n) => l.classList.toggle('on', lines.includes(n + 1)));
+    say.innerHTML = s.say; s.draw && s.draw(refs, stage);
+    $$('i', dots).forEach((d, n) => d.classList.toggle('on', n === i));
+    no.textContent = `step ${i + 1} of ${o.steps.length}`;
+    prev.disabled = i === 0; next.disabled = i === o.steps.length - 1;
+    if (i === o.steps.length - 1 && timer) toggle();
+  }
+  function toggle() {
+    if (timer) { clearInterval(timer); timer = null; play.textContent = '▶ Play'; }
+    else { if (i === o.steps.length - 1) go(0); timer = setInterval(() => go(i + 1), o.pace || 3200); play.textContent = '❚❚ Pause'; }
+  }
+  go(0);
+  return { go, refs };
+}
+
+/* DataFrame-looking table. cols: ['name',...]; rows: [[...],...]; index: optional labels. */
+function DF(parent, cols, rows, index) {
+  const t = h('table', { class: 'df' }), head = h('tr', {});
+  if (index) head.append(h('th', {}, ''));
+  cols.forEach(c => head.append(h('th', {}, c)));
+  t.append(head);
+  const cells = rows.map((r, ri) => {
+    const tr = h('tr', {}); if (index) tr.append(h('td', { class: 'idx' }, index[ri]));
+    const cs = r.map(v => { const td = h('td', {}, String(v)); tr.append(td); return td; });
+    t.append(tr); return cs;
+  });
+  parent.append(t);
+  const api = {
+    el: t, cells, ths: $$('th', head).slice(index ? 1 : 0), idx: index ? $$('td.idx', t) : [],
+    set(r, c, v, cls) { const td = cells[r][c]; td.textContent = v; td.className = cls || ''; return api; },
+    col(c, vals, cls) { vals.forEach((v, r) => api.set(r, c, v, typeof cls === 'function' ? cls(v, r) : cls)); return api; },
+    showCol(c, on) { api.ths[c].classList.toggle('hide', !on); cells.forEach(r => r[c].classList.toggle('hide', !on)); return api; }
+  };
+  return api;
+}
+const show = (el, on = true) => el.classList.toggle('show', on);
+/* tiny deterministic random so "random_state=42" really is repeatable */
+function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function shuffled(n, seed) { const r = rng(seed), a = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+const sd = a => { const m = mean(a); return Math.sqrt(mean(a.map(x => (x - m) ** 2))); };
+const fmt = (x, d = 2) => Number(x).toFixed(d);
+
+const STORY = {"steps": [{"h": "The question", "say": "Flight delays cost the US an estimated $32.9 billion in 2007 (Ball et al., 2010). An airline cannot protect every flight, so the useful question is not <i>why are flights late</i> but <b>which departures will be 15+ minutes late, and how early can we know?</b> Two decisions depend on it: where to put schedule buffers months ahead, and which flights operations should protect on the day.", "viz": {"kind": "text", "text": "Which New York departures will leave 15+ minutes late?", "kv": [["336,776", "flights scheduled from JFK, LGA, EWR in 2013"], ["22.2%", "of departed flights left 15+ min late"], ["$32.9bn", "estimated US cost of delays, 2007"]]}}, {"h": "Clean: the missing values are cancellations", "say": "<code>dep_time</code> is empty for 8,255 flights. They are not random gaps: those flights were <b>cancelled</b>. <code>dropna()</code> would delete them without a trace. They are flagged, counted and set aside instead, because a flight that never left has no delay to predict. Then two tables are joined with left joins, and the row count is asserted to be unchanged.", "code": "flights[\"cancelled\"] = flights[\"dep_time\"].isna()\ndf = flights[~flights[\"cancelled\"]].copy()\ndf = df.merge(weather, how=\"left\", validate=\"many_to_one\")\nassert len(df) == before        # a left join must not add or lose flights", "viz": {"kind": "funnel", "rows": [{"label": "Raw flights", "rows": 336776, "note": "every scheduled departure from JFK, LGA, EWR in 2013"}, {"label": "Departed flights (cancellations set aside)", "rows": 328521, "note": "8,255 cancelled flights analysed separately, not deleted"}, {"label": "After joins (weather, aircraft)", "rows": 328521, "note": "left joins: row count unchanged, gaps kept as NaN and flagged"}], "note": "Also found: one wind speed of 1,048 mph (set to NaN: impossible), <code>wind_gust</code> 80% empty (column dropped), air pressure 11% empty and aircraft age 16% empty (kept, imputed inside the pipeline with a missing flag)."}}, {"h": "Explore: time of day", "say": "<b>Pattern:</b> the delay rate climbs almost every hour, from 6% at 05:00 to 38% at 21:00. <b>Exception:</b> it eases after 22:00, when few flights remain. <b>Meaning:</b> delays accumulate through the day as late aircraft and crews feed later flights. <b>Doubt:</b> evening flights are also different routes and carriers, so hour is not a pure cause.", "viz": {"kind": "bars", "title": "% of flights leaving 15+ min late, by scheduled hour", "labels": ["5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"], "values": [0.06327160493827161, 0.0783123090182559, 0.08592224391975857, 0.11682835820895522, 0.12504378283712786, 0.14386648800097454, 0.1623562305394929, 0.18732085651660765, 0.22302453013775797, 0.23959318826868495, 0.2824963390472909, 0.29297897301687575, 0.31267356728098966, 0.3181452947015172, 0.35578231292517004, 0.3677575607029746, 0.3784682630178639, 0.3264349863334635, 0.26622137404580154], "fmt": "pct", "hi": [16], "xlabel": "scheduled departure hour (local time)"}}, {"h": "Explore: delays propagate", "say": "Group flights by how late the airport's <i>earlier</i> flights were (those scheduled 3 to 6 hours before). When they averaged under 5 minutes late, 15% of flights were delayed. When they averaged 45+ minutes, 75% were. This is information an operations room has an hour before departure. It becomes the feature <code>earlier_delay</code>.", "viz": {"kind": "bars", "title": "% late, by average delay of flights 3 to 6 hours earlier", "labels": ["<5 min", "5-10 min", "10-20 min", "20-30 min", "30-45 min", "45+ min"], "values": [0.14869195325289325, 0.2578365089121082, 0.3740174567198727, 0.545005666180994, 0.6836883185606561, 0.7511969904240766], "fmt": "pct", "hi": [5], "xlabel": "average delay earlier at the same airport"}}, {"h": "Split by time", "say": "The model will be used on <b>future</b> flights, so it is tested on months it has never seen: train on January to September, test on October to December. A random split mixes flights from the same stormy afternoon into both sets and flatters the score. Here the same model scores 0.774 on a random split and 0.736 on the honest one.", "code": "train = df[df[\"month\"] <= 9]\ntest  = df[df[\"month\"] >= 10]", "viz": {"kind": "split", "title": "One year, cut by date", "train": {"label": "January to September", "n": 245723, "sub": "23.1% late"}, "test": {"label": "Oct to Dec", "n": 82798, "sub": "19.6% late"}, "note": "Notice the test months have a lower delay rate than the training months. Real deployment always looks like this: the future is never an exact copy of the past."}}, {"h": "Models: information beats cleverness", "say": "A baseline that gives every flight the average rate scores 0.5 by definition. With <b>schedule-time</b> features, logistic regression reaches 0.669 and gradient boosting 0.672: almost no gain from the fancier model. Adding <b>day-of-operations</b> features lifts them to 0.719 and 0.736. Better information was worth about four times more than a better algorithm.", "viz": {"kind": "hbars", "title": "ROC AUC on October to December", "rows": [{"name": "Baseline: always the average rate", "value": 0.5, "cls": "lo", "label": "0.500"}, {"name": "Logistic regression, schedule-time", "value": 0.6685254031256518, "cls": "", "label": "0.669"}, {"name": "Gradient boosting, schedule-time", "value": 0.6723833080887551, "cls": "", "label": "0.672"}, {"name": "Logistic regression, day-of-operations", "value": 0.719136461715838, "cls": "", "label": "0.719"}, {"name": "Gradient boosting, day-of-operations", "value": 0.7364786812500024, "cls": "hi", "label": "0.736"}], "min": 0.45, "max": 0.8, "xlabel": "0.5 = no better than chance · 1.0 = perfect ranking"}}, {"h": "What the model relies on", "say": "Shuffle one column in the test set and see how much the score drops. The airport's recent delay matters most, then the scheduled hour, then the carrier. Weather barely registers <i>once the airport's current delay is known</i>, because that delay already contains the weather's effect. This is reliance, not cause.", "viz": {"kind": "hbars", "title": "Drop in AUC when a feature is shuffled", "rows": [{"name": "How late the airport already is", "value": 0.0811001624329504}, {"name": "Scheduled hour", "value": 0.05855731913101536}, {"name": "Carrier", "value": 0.03194225950781693}, {"name": "Destination", "value": 0.009044924199559556}, {"name": "Rain/snow last hour", "value": 0.004235598384481731}, {"name": "Humidity", "value": 0.00367485552163318}, {"name": "Day of week", "value": 0.0032854531606126836}], "digits": 3, "xlabel": "permutation importance on the test set"}}, {"h": "Decide: move the threshold", "say": "A probability is not a decision. Drag the line: everything to its right gets action (a spare crew, a held connection). Lower it and you catch more delays but raise more false alarms. Set what a missed delay costs relative to one intervention and watch where the cheapest threshold lands. It is almost never 0.5.", "viz": {"kind": "threshold", "title": "82,798 test flights by predicted probability", "pos": [15, 203, 570, 785, 917, 1057, 1066, 998, 853, 837, 689, 644, 576, 541, 445, 374, 397, 322, 317, 286, 256, 268, 233, 259, 230, 205, 225, 219, 203, 203, 177, 176, 170, 182, 194, 156, 117, 165, 129, 127, 124, 106, 87, 61, 38, 23, 11, 4, 1, 0], "neg": [236, 4398, 7487, 8240, 7408, 6938, 5966, 4900, 3891, 3030, 2456, 1923, 1567, 1221, 991, 859, 606, 563, 491, 429, 368, 346, 280, 234, 240, 205, 151, 158, 136, 128, 119, 81, 88, 73, 60, 52, 53, 49, 36, 24, 21, 19, 21, 11, 1, 1, 2, 0, 0, 0], "pos_word": "delays", "pos_one": "delay", "neg_word": "on-time flights", "action_word": "intervention", "cost_fn": 3, "start": 0.3}}, {"h": "The business answer", "say": "<b>Data-science answer:</b> AUC 0.67 months ahead, 0.74 an hour ahead. <b>Business answer:</b> put buffers and spare aircraft in the 17:00 to 21:00 bank; each day, hand operations the riskiest 10% of departures (about 90 flights), of which 57% will be late against 20% on a random list. <b>Limits:</b> one city, one year; weather is an observation not a forecast; no data on the inbound aircraft; carrier differences are not causes.", "viz": {"kind": "table", "title": "If operations can act on the riskiest share of flights", "cols": ["Flag the top", "Flights per day", "That are late (precision)", "Share of all delays caught (recall)", "Better than chance"], "rows": [["5%", "45", "69%", "18%", "3.5×"], ["10%", "90", "57%", "29%", "2.9×"], ["20%", "180", "45%", "46%", "2.3×"], ["30%", "270", "38%", "58%", "1.9×"]]}}]};
+const pct = (v, d = 0) => (v * 100).toFixed(d) + '%';
+const grow = fn => requestAnimationFrame(() => requestAnimationFrame(fn));
+const VIZ = {
+  text(st, v) { st.append(h('div', { class: 'big', html: v.text })); if (v.kv) st.append(h('div', { class: 'kv' }, ...v.kv.map(([b, s]) => h('div', {}, h('b', {}, b), h('span', {}, s))))); },
+  funnel(st, v) { const max = Math.max(...v.rows.map(r => r.rows)); st.append(h('h4', {}, v.title || 'Rows after each cleaning step'));
+    v.rows.forEach(r => { const i = h('i'); st.append(h('div', { class: 'fn' }, h('span', {}, r.label), h('div', { class: 'b' }, i, h('span', {}, r.rows.toLocaleString())), h('small', {}, r.note))); grow(() => i.style.width = (r.rows / max * 100) + '%'); }); if (v.note) st.append(h('div', { class: 'note warn', html: v.note })); },
+  bars(st, v) { const max = v.max || Math.max(...v.values) * 1.12; st.append(h('h4', {}, v.title)); const box = h('div', { class: 'vb' }), xs = h('div', { class: 'vx' });
+    v.values.forEach((val, k) => { const i = h('i'); box.append(h('div', { class: 'c' + ((v.hi || []).includes(k) ? ' hi' : '') }, h('em', {}, v.fmt === 'pct' ? pct(val) : (v.fmt === 'num1' ? val.toFixed(1) : String(val))), i)); xs.append(h('span', {}, v.labels[k])); grow(() => i.style.height = (val / max * 100) + '%'); });
+    st.append(box, xs, h('div', { class: 'cap' }, v.xlabel || '')); if (v.note) st.append(h('div', { class: 'note', html: v.note })); },
+  group(st, v) { const max = v.max || 1; st.append(h('h4', {}, v.title)); const box = h('div', { class: 'vb' }), xs = h('div', { class: 'vx' });
+    v.labels.forEach((lab, k) => { v.series.forEach((s, j) => { const i = h('i'); box.append(h('div', { class: 'c' + (j ? '' : ' s2') }, h('em', {}, pct(s.values[k])), i)); grow(() => i.style.height = (s.values[k] / max * 100) + '%'); }); box.append(h('div', { style: 'flex:0 0 10px' })); xs.append(h('span', {}, lab)); });
+    st.append(box, xs, h('div', { class: 'legend', style: 'justify-content:center' }, ...v.series.map((s, j) => h('span', {}, h('i', { style: `background:var(--${j ? 'blue' : 'orange'})` }), s.name)))); if (v.note) st.append(h('div', { class: 'note', html: v.note })); },
+  hbars(st, v) { const lo = v.min || 0, max = v.max || Math.max(...v.rows.map(r => r.value)); st.append(h('h4', {}, v.title));
+    v.rows.forEach(r => { const i = h('i'); st.append(h('div', { class: 'hb ' + (r.cls || '') }, h('span', {}, r.name), h('div', {}, i), h('b', {}, r.label ?? r.value.toFixed(v.digits ?? 3)))); grow(() => i.style.width = Math.max(1.5, (r.value - lo) / (max - lo) * 100) + '%'); });
+    st.append(h('div', { class: 'cap' }, v.xlabel || '')); if (v.note) st.append(h('div', { class: 'note', html: v.note })); },
+  split(st, v) { st.append(h('h4', {}, v.title)); const a = h('div', { style: 'background:var(--blue)' }, v.train.label), b = h('div', { style: 'background:var(--orange)' }, v.test.label); st.append(h('div', { class: 'sp' }, a, b));
+    grow(() => { a.style.flex = v.train.n; b.style.flex = v.test.n; });
+    st.append(h('div', { class: 'kv' }, h('div', {}, h('b', {}, v.train.n.toLocaleString()), h('span', {}, 'training rows · ' + v.train.sub)), h('div', {}, h('b', {}, v.test.n.toLocaleString()), h('span', {}, 'test rows · ' + v.test.sub)))); if (v.note) st.append(h('div', { class: 'note', html: v.note })); },
+  table(st, v) { st.append(h('h4', {}, v.title)); const t = h('table', { class: 't' }, h('tr', {}, ...v.cols.map(c => h('th', {}, c)))); v.rows.forEach(r => t.append(h('tr', {}, ...r.map((c, k) => h('td', { class: typeof c === 'string' && k === v.sign ? (c.startsWith('+') ? 'pos' : 'neg') : '' }, c))))); st.append(h('div', { class: 'scroll' }, t)); if (v.note) st.append(h('div', { class: 'note', html: v.note })); },
+  threshold(st, v) { const P = v.pos, N = v.neg, nb = P.length, tot = a => a.reduce((x, y) => x + y, 0), TP0 = tot(P), TN0 = tot(N);
+    const cv = h('canvas', { width: 760, height: 300 }), sl = h('input', { type: 'range', min: 0, max: nb, step: 1, value: Math.round((v.start ?? .5) * nb) }), cost = h('input', { type: 'number', min: 1, max: 50, step: 1, value: v.cost_fn ?? 5 }), kv = h('div', { class: 'kv' }), msg = h('div', { class: 'note' });
+    st.append(h('div', { class: 'th vz' }, h('h4', {}, v.title), cv, sl, h('label', {}, 'A missed ' + (v.pos_one || v.pos_word) + ' costs', cost, '× one ' + v.action_word), kv, msg));
+    const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    function draw() { const k = +sl.value, t = k / nb, c = +cost.value || 1, tp = tot(P.slice(k)), fp = tot(N.slice(k)), fn = TP0 - tp, tn = TN0 - fp, x = cv.getContext('2d'), W = cv.width, H = cv.height, hh = H / 2 - 18, bw = W / nb;
+      x.clearRect(0, 0, W, H); const mN = Math.max(...N), mP = Math.max(...P);
+      [[N, mN, 0, '--blue', v.neg_word], [P, mP, H / 2 + 6, '--orange', v.pos_word]].forEach(([arr, m, y0, col, lab]) => { arr.forEach((n, i) => { x.globalAlpha = i >= k ? 1 : .28; x.fillStyle = css(col); const bh = n / m * hh; x.fillRect(i * bw + 1, y0 + hh - bh + 14, bw - 2, bh); }); x.globalAlpha = 1; x.fillStyle = css('--ink2'); x.font = '600 15px system-ui'; x.fillText(lab + ' (' + tot(arr).toLocaleString() + ')', W - 8 - x.measureText(lab + ' (' + tot(arr).toLocaleString() + ')').width, y0 + 16); });
+      x.strokeStyle = css('--ink'); x.lineWidth = 2.5; x.beginPath(); x.moveTo(k * bw, 0); x.lineTo(k * bw, H); x.stroke(); x.fillStyle = css('--ink'); x.font = '600 15px system-ui'; x.fillText('threshold ' + t.toFixed(2) + ' →  act', Math.min(W - 170, k * bw + 8), H / 2 + 4);
+      const prec = tp + fp ? tp / (tp + fp) : 0, rec = tp / TP0, total = c * fn + fp, none = c * TP0, all = TN0;
+      let best = 0, bc = Infinity; for (let j = 0; j <= nb; j++) { const cc = c * (TP0 - tot(P.slice(j))) + tot(N.slice(j)); if (cc < bc) { bc = cc; best = j; } }
+      kv.replaceChildren(...[[(tp + fp).toLocaleString(), 'flagged for action'], [tp.toLocaleString(), v.pos_word + ' caught'], [fn.toLocaleString(), v.pos_word + ' missed'], [fp.toLocaleString(), 'false alarms'], [pct(prec), 'precision: flagged that were right'], [pct(rec), 'recall: ' + v.pos_word + ' that were caught'], [Math.round(total).toLocaleString(), 'total cost (in ' + v.action_word + 's)']].map(([b, s]) => h('div', {}, h('b', {}, b), h('span', {}, s))));
+      msg.innerHTML = `Doing nothing would cost ${Math.round(none).toLocaleString()}; acting on everyone ${all.toLocaleString()}. At this cost ratio the cheapest threshold is <b>${(best / nb).toFixed(2)}</b> (cost ${Math.round(bc).toLocaleString()}). The slider moves in steps of 0.02, so this can differ slightly from the exact figure in the paper. ${v.note || ''}`; }
+    sl.oninput = cost.oninput = draw; draw(); }
+};
+Lesson({ mount: '#S', title: STORY.steps_title || 'From question to decision', sub: 'Use Next, the dots, or Play.', pace: 6500,
+  steps: STORY.steps.map((s, i) => ({ say: `<b>${i + 1} · ${s.h}.</b> ${s.say}` + (s.code ? `<pre class="code" style="margin-top:10px">${s.code.split('\n').map(l => `<span class="l">${l.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/(#.*)$/, '<span class="c">$1</span>') || ' '}</span>`).join('')}</pre>` : ''), draw(r, st) { st.replaceChildren(); st.className = 'stage vz'; VIZ[s.viz.kind](st, s.viz); } })) });
+</script></body></html>
